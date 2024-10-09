@@ -387,7 +387,7 @@ impl <T> MatrixFull<T> {
         self.iter_submatrix_mut(x,y)
     }
     #[inline]
-    pub fn iter_diagonal<'a>(&'a self) -> Option<StepBy<std::slice::Iter<T>>> {
+    pub fn iter_diagonal<'a>(&'a self) -> Option<StepBy<std::slice::Iter<'a, T>>> {
         let [x,y] = self.size;
         if x==0 || y==0 || x!=y {
             return None
@@ -395,7 +395,7 @@ impl <T> MatrixFull<T> {
             return Some(self.iter().step_by(x+1))
         }
     }
-    pub fn iter_diagonal_mut<'a>(&'a mut self) -> Option<StepBy<std::slice::IterMut<T>>> {
+    pub fn iter_diagonal_mut<'a>(&'a mut self) -> Option<StepBy<std::slice::IterMut<'a, T>>> {
         let [x,y] = self.size;
         if x==0 || y==0 || x!=y {
             return None
@@ -404,7 +404,7 @@ impl <T> MatrixFull<T> {
         }
     }
     #[inline]
-    pub fn iter_matrixupper<'a>(&'a self) -> Option<MatrixUpperStepBy<std::slice::Iter<T>>> {
+    pub fn iter_matrixupper<'a>(&'a self) -> Option<MatrixUpperStepBy<std::slice::Iter<'a, T>>> {
         let [x,y] = self.size;
         if x==0 || y==0 || x!=y {
             return None
@@ -413,7 +413,7 @@ impl <T> MatrixFull<T> {
         }
     }
     #[inline]
-    pub fn iter_matrixupper_mut<'a>(&'a mut self) -> Option<MatrixUpperStepBy<std::slice::IterMut<T>>> {
+    pub fn iter_matrixupper_mut<'a>(&'a mut self) -> Option<MatrixUpperStepBy<std::slice::IterMut<'a, T>>> {
         let [x,y] = self.size;
         if x==0 || y==0 || x!=y {
             return None
@@ -614,7 +614,7 @@ impl <T: Copy + Clone> MatrixFull<T> {
     }
     /// Collect the reference of diagonal terms as a vector
     #[inline]
-    pub fn get_diagonal_terms<'a>(&'a self) -> Option<Vec<&T>> {
+    pub fn get_diagonal_terms<'a>(&'a self) -> Option<Vec<&'a T>> {
         //let tmp_len = self.size;
         let [x,y] = self.size;
         if x==0 || y==0 || x!=y {

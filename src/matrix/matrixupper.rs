@@ -24,7 +24,7 @@ pub struct SubMatrixUpperStepBy<'a, I> {
     first_take: bool,
 }
 impl<'a, I> SubMatrixUpperStepBy<'a, I> {
-    pub fn new(iter: I, rows: Range<usize>, columns: Range<usize>, matrixupper_index: &'a MatrixUpper<[usize;2]>) -> SubMatrixUpperStepBy<I> {
+    pub fn new(iter: I, rows: Range<usize>, columns: Range<usize>, matrixupper_index: &'a MatrixUpper<[usize;2]>) -> SubMatrixUpperStepBy<'a, I> {
         //let position =columns.start*size[0] + rows.start;
         let position =if rows.start<=columns.start {
             columns.start*(columns.start+1)/2 + rows.start
@@ -266,11 +266,11 @@ impl <T> MatrixUpper<T> {
     }
 
     pub fn iter_submatrix<'a> (&'a self, rows: Range<usize>, columns: Range<usize>, matrixupper_index: &'a MatrixUpper<[usize;2]>) 
-        -> SubMatrixUpperStepBy<slice::Iter<'a, T>> {
+        -> SubMatrixUpperStepBy<'a, slice::Iter<'a, T>> {
         self.data.iter().submatrixupper_step_by(rows, columns, matrixupper_index)
     }
     pub fn iter_submatrix_mut<'a> (&'a mut self, rows: Range<usize>, columns: Range<usize>, matrixupper_index: &'a MatrixUpper<[usize;2]>) 
-        -> SubMatrixUpperStepBy<slice::IterMut<'a, T>> {
+        -> SubMatrixUpperStepBy<'a, slice::IterMut<'a, T>> {
         self.data.iter_mut().submatrixupper_step_by(rows, columns, matrixupper_index)
     }
 
@@ -667,11 +667,11 @@ where T: Clone + Copy {
         self.data.iter_mut()
     }
     pub fn iter_submatrix<'a> (&'a self, rows: Range<usize>, columns: Range<usize>, matrixupper_index: &'a MatrixUpper<[usize;2]>) 
-        -> SubSubMatrixUpperStepBy<slice::Iter<'a, T>> {
+        -> SubSubMatrixUpperStepBy<'a, slice::Iter<'a, T>> {
         self.data.iter().subsubmatrixupper_step_by(rows, columns, self.global_range.clone(), matrixupper_index)
     }
     pub fn iter_submatrix_mut<'a> (&'a mut self, rows: Range<usize>, columns: Range<usize>, matrixupper_index: &'a MatrixUpper<[usize;2]>) 
-        -> SubSubMatrixUpperStepBy<slice::IterMut<'a, T>> {
+        -> SubSubMatrixUpperStepBy<'a, slice::IterMut<'a, T>> {
         self.data.iter_mut().subsubmatrixupper_step_by(rows, columns, self.global_range.clone(), matrixupper_index)
     }
 }
@@ -688,7 +688,7 @@ pub struct SubSubMatrixUpperStepBy<'a, I> {
     first_take: bool,
 }
 impl<'a, I> SubSubMatrixUpperStepBy<'a, I> {
-    pub fn new(iter: I, rows: Range<usize>, columns: Range<usize>, global_range: Range<usize>,matrixupper_index: &'a MatrixUpper<[usize;2]>) -> SubSubMatrixUpperStepBy<I> {
+    pub fn new(iter: I, rows: Range<usize>, columns: Range<usize>, global_range: Range<usize>,matrixupper_index: &'a MatrixUpper<[usize;2]>) -> SubSubMatrixUpperStepBy<'a, I> {
         // determin the starting point of the sub matrix in the global upper part
         let global_position =if rows.start<=columns.start {
             columns.start*(columns.start+1)/2 + rows.start
