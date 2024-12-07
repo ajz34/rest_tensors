@@ -1,46 +1,67 @@
-//extern crate dunce;
-use std::path::PathBuf;
-use std::{fs, env, process::Command};
+use std::{error::Error, path::PathBuf};
+
+/// Generate link search paths from a list of paths.
+///
+/// This allows paths like `/path/to/lib1:/path/to/lib2` to be split into individual paths.
+fn generate_link_search_paths(paths: &[Result<String, impl Error + Clone>]) -> Vec<String> {
+    paths
+        .iter()
+        .map(|path| {
+            path.clone()
+                .unwrap_or_default()
+                .split(":")
+                .map(|path| path.to_string())
+                .collect::<Vec<_>>()
+        })
+        .into_iter()
+        .flatten()
+        .filter(|path| !path.is_empty())
+        .collect::<Vec<_>>()
+}
+
+/// Check if the library is found in the given paths.
+fn check_library_found(
+    lib_name: &str,
+    lib_paths: &[String],
+    lib_extension: &[String],
+) -> Option<String> {
+    for path in lib_paths {
+        for ext in lib_extension {
+            let lib_path = PathBuf::from(&path).join(format!("lib{}.{}", lib_name, ext));
+            if lib_path.exists() {
+                return Some(lib_path.to_string_lossy().to_string());
+            }
+        }
+    }
+    return None;
+}
 
 fn main() -> std::io::Result<()> {
 
-    // the lib directory to store librestmatr.so
-    let external_dir = if let Ok(target_dir) = env::var("REST_EXT_DIR") {
-        PathBuf::from(target_dir)
-    } else {PathBuf::from(".".to_string())};
-
-    if ! external_dir.is_dir() {
-        fs::create_dir(&external_dir)?
-    };
-
-    let blas_dir = if let Ok(blas_dir) = env::var("REST_BLAS_DIR") {
-        PathBuf::from(blas_dir)
-    } else {PathBuf::from(".".to_string())};
-
-    let fortran_compiler = if let Ok(fortran_compiler) = env::var("REST_FORTRAN_COMPILER") {
-        fortran_compiler
-    } else {"gfortran".to_string()};
-
-
-    let restmatr_file = format!("src/external_libs/restmatr.f90");
-    let restmatr_libr = format!("{}/librestmatr.so",&external_dir.to_str().unwrap());
-    let restmatr_link = format!("-L{}",&blas_dir.display());
-
-    Command::new(fortran_compiler)
-        .args(&["-shared", "-fpic", "-O2",&restmatr_file,"-o",&restmatr_libr,&restmatr_link, "-lopenblas"])
-        .status().unwrap();
-
-
+    // build and link restmatr
+    let dst = cmake::Config::new("src/external_libs").build();
+    println!("cargo:rustc-link-search=native={}/lib", dst.display());
     println!("cargo:rustc-link-lib=restmatr");
-    println!("cargo:rustc-link-search=native={}",&external_dir.to_str().unwrap());
+    println!("cargo:rustc-link-lib=gfortran");
+    println!("cargo::rerun-if-changed=src/external_libs");
 
-
-    println!("cargo:rustc-link-lib=openblas");
-    println!("cargo:rustc-link-search=native={}",&blas_dir.display());
-
-    println!("cargo:rerun-if-changed=src/external_libs/restmatr.f90");
-    println!("cargo:rerun-if-changed={}/librestmatr.so", &external_dir.to_str().unwrap());
+    // search dirs for openblas
+    for key in ["REST_BLAS_DIR", "REST_EXT_DIR", "LD_LIBRARY_PATH"].iter() {
+        println!("cargo:rerun-if-env-changed={}", key);
+    }
+    let lib_paths = generate_link_search_paths(&[
+        std::env::var("REST_BLAS_DIR"),
+        std::env::var("REST_EXT_DIR"),
+        std::env::var("LD_LIBRARY_PATH"),
+    ]);
+    if let Some(path) = check_library_found("openblas", &lib_paths, &["so".to_string()]) {
+        let path = std::fs::canonicalize(path).unwrap();
+        let path = path.parent().unwrap().display();
+        println!("cargo:rustc-link-search=native={}", path);
+        println!("cargo:rustc-link-lib=openblas");
+    } else {
+        panic!("libopenblas.so not found!")
+    }
 
     Ok(())
-
 }
